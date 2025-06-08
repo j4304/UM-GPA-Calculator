@@ -4,7 +4,7 @@ export function useIsSmallScreen() {
   const [isSmall, setIsSmall] = useState(false);
 
   useEffect(() => {
-    const checkScreen = () => setIsSmall(window.innerWidth < 750); // Tailwind `sm` breakpoint is 640px
+    const checkScreen = () => setIsSmall(window.innerWidth < 775);
     checkScreen();
     window.addEventListener("resize", checkScreen);
     return () => window.removeEventListener("resize", checkScreen);

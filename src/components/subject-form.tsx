@@ -25,7 +25,6 @@ export default function SubjectForm() {
   const form = useForm<SubjectFormValues>({
     resolver: zodResolver(SubjectSchema),
     defaultValues: {
-      // Use 0 as default instead of NaN to avoid calculations issues
       subjects: [{ name: "", units: 0, grade: 0 }],
     },
   });
@@ -46,9 +45,15 @@ export default function SubjectForm() {
 
   useEffect(() => {
     if (autoCalc && subjects) {
-      setGpa(calculateGpa(subjects));
+      form.trigger("subjects").then((isValid) => {
+        if (isValid) {
+          setGpa(calculateGpa(subjects));
+        } else {
+          setGpa(null);
+        }
+      });
     }
-  }, [autoCalc, subjects]);
+  }, [autoCalc, form, subjects]);
 
   function calculateGpa(subjects: SubjectFormValues["subjects"]) {
     const validSubjects = subjects.filter(
@@ -68,7 +73,6 @@ export default function SubjectForm() {
     return isNaN(calculatedGpa) ? null : parseFloat(calculatedGpa.toFixed(2));
   }
 
-  // Submit handler: recalc GPA once
   function onSubmit(data: SubjectFormValues) {
     setGpa(calculateGpa(data.subjects));
   }
@@ -145,7 +149,6 @@ export default function SubjectForm() {
                               }
                             }}
                             onBlur={(e) => {
-                              // Set to 0 if empty on blur
                               const val = parseFloat(e.target.value);
                               field.onChange(isNaN(val) || val < 0 ? 0 : val);
                             }}
@@ -159,7 +162,7 @@ export default function SubjectForm() {
                             }}
                           />
                         </FormControl>
-                        <FormMessage className="text-sm mt-1 w-full whitespace-nowrap overflow-hidden hidden sm:block" />
+                        <FormMessage className="text-sm mt-1 w-full text-left whitespace-nowrap hidden sm:block" />
                       </FormItem>
                     );
                   }}
@@ -190,7 +193,7 @@ export default function SubjectForm() {
                             <SelectTrigger
                               className={cn(
                                 "w-full hide-select-icon",
-                                isPlaceholder && "text-muted-foreground", // << 👈 force placeholder style
+                                isPlaceholder && "text-muted-foreground",
                                 form.formState.errors.subjects?.[index]
                                   ?.grade &&
                                   "border-destructive ring-destructive"
@@ -204,7 +207,6 @@ export default function SubjectForm() {
                             </SelectTrigger>
 
                             <SelectContent>
-                              {/* Hidden placeholder with value=0 */}
                               <SelectItem
                                 value={"0.0"}
                                 className="hidden"
@@ -225,7 +227,7 @@ export default function SubjectForm() {
                           </Select>
                         </FormControl>
 
-                        <FormMessage className="text-sm mt-1 w-full whitespace-nowrap hidden sm:block" />
+                        <FormMessage className="text-sm mt-1 w-full text-left whitespace-nowrap hidden sm:block" />
                       </FormItem>
                     );
                   }}
@@ -238,7 +240,6 @@ export default function SubjectForm() {
                     onClick={() => {
                       remove(index);
                       if (autoCalc) {
-                        // Update GPA after removal
                         const currentSubjects = form.getValues("subjects");
                         setGpa(calculateGpa(currentSubjects));
                       }

@@ -122,7 +122,12 @@
 }
 
 .moving-gradient {
-  background: linear-gradient(270deg, #ff6a00, #ee0979, #ff6a00); /* orange to red gradient */
+  background: linear-gradient(
+    270deg,
+    #ff6a00,
+    #ee0979,
+    #ff6a00
+  ); /* orange to red gradient */
   background-size: 600% 600%; /* zoomed-in to animate */
   -webkit-background-clip: text;
   background-clip: text;
