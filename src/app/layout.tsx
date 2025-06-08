@@ -4,6 +4,7 @@ import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { ModeToggle } from "@/components/mode-toggle";
 import { Analytics } from "@vercel/analytics/next";
+import Head from "next/head";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -15,6 +16,7 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+// SEO metadata
 export const metadata: Metadata = {
   title: "UM GPA Calculator",
   description:
@@ -33,6 +35,35 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <Head>
+        {/* SEO Basics */}
+        <meta charSet="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <link rel="canonical" href="https://umgpa.vercel.app" />
+        <meta name="robots" content="index, follow" />
+
+        {/* Schema JSON-LD */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "WebApplication",
+              name: "UM GPA Calculator",
+              url: "https://umgpa.vercel.app",
+              description:
+                "Calculate your GPA easily with the UM GPA Calculator — accurate, fast and tailored for University of Mindanao students.",
+              applicationCategory: "EducationApplication",
+              creator: {
+                "@type": "Person",
+                name: "Cristian Jay Cosep",
+                url: "https://cristianjay.me",
+              },
+            }),
+          }}
+        />
+      </Head>
+
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased flex flex-col min-h-screen`}
       >
@@ -44,9 +75,9 @@ export default function RootLayout({
         >
           <header className="sticky top-0 z-50 bg-background border-b flex-shrink-0">
             <div className="container mx-auto max-w-5xl px-6 py-4 flex items-center justify-between">
-              <div className="text-2xl font-bold">
+              <h1 className="text-2xl font-bold">
                 <span className="moving-gradient">UM</span> GPA Calculator
-              </div>
+              </h1>
               <ModeToggle />
             </div>
           </header>
