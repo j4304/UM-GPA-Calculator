@@ -141,3 +141,10 @@
     background-position: 0% 50%;
   }
 }
+
+/* In your global CSS if needed */
+@media (max-width: 460px) {
+  .hide-select-icon svg {
+    display: none !important;
+  }
+}

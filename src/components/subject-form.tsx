@@ -1,41 +1,76 @@
 "use client";
 
-import { SubjectFormValues, SubjectSchema } from "@/lib/schema";
+import { SubjectFormValues, SubjectSchema, validGrades } from "@/lib/schema";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm, useFieldArray } from "react-hook-form";
+import { useForm, useFieldArray, useWatch } from "react-hook-form";
 import { Form, FormControl, FormField, FormItem, FormMessage } from "./ui/form";
 import { Card } from "./ui/card";
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
 import { Trash, RefreshCw } from "lucide-react";
-import { useState } from "react";
-// import { Select, SelectContent, SelectItem, SelectTrigger } from "./ui/select";
-// import { SelectValue } from "@radix-ui/react-select";
+import { useEffect, useState } from "react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "./ui/select";
+import { useIsSmallScreen } from "../lib/use-is-small-screen";
+import { cn } from "@/lib/utils";
+import { Switch } from "./ui/switch";
+import { Label } from "./ui/label";
 
 export default function SubjectForm() {
   const form = useForm<SubjectFormValues>({
     resolver: zodResolver(SubjectSchema),
     defaultValues: {
+      // Use 0 as default instead of NaN to avoid calculations issues
       subjects: [{ name: "", units: 0, grade: 0 }],
     },
   });
 
+  const isSmallScreen = useIsSmallScreen();
   const [gpa, setGpa] = useState<number | null>(null);
+  const [autoCalc, setAutoCalc] = useState(false);
 
   const { fields, append, remove } = useFieldArray({
     control: form.control,
     name: "subjects",
   });
 
-  function onSubmit(data: SubjectFormValues) {
-    const totalUnits = data.subjects.reduce((sum, subj) => sum + subj.units, 0);
-    const weightedGrades = data.subjects.reduce(
+  const subjects = useWatch({
+    control: form.control,
+    name: "subjects",
+  });
+
+  useEffect(() => {
+    if (autoCalc && subjects) {
+      setGpa(calculateGpa(subjects));
+    }
+  }, [autoCalc, subjects]);
+
+  function calculateGpa(subjects: SubjectFormValues["subjects"]) {
+    const validSubjects = subjects.filter(
+      (subj) =>
+        typeof subj.grade === "number" &&
+        !isNaN(subj.units) &&
+        !isNaN(subj.grade) &&
+        subj.units > 0
+    );
+
+    const totalUnits = validSubjects.reduce((sum, subj) => sum + subj.units, 0);
+    const weightedGrades = validSubjects.reduce(
       (sum, subj) => sum + subj.units * subj.grade,
       0
     );
-    const calculatedGpa = totalUnits > 0 ? weightedGrades / totalUnits : 0;
-    setGpa(parseFloat(calculatedGpa.toFixed(2)));
-    console.log("GPA:", calculatedGpa.toFixed(2));
+    const calculatedGpa = totalUnits > 0 ? weightedGrades / totalUnits : NaN;
+    return isNaN(calculatedGpa) ? null : parseFloat(calculatedGpa.toFixed(2));
+  }
+
+  // Submit handler: recalc GPA once
+  function onSubmit(data: SubjectFormValues) {
+    setGpa(calculateGpa(data.subjects));
   }
 
   return (
@@ -51,7 +86,7 @@ export default function SubjectForm() {
                 variant="ghost"
                 type="button"
                 onClick={() => {
-                  form.reset();
+                  form.reset({ subjects: [{ name: "", units: 0, grade: 0 }] });
                   setGpa(null);
                 }}
                 className="group"
@@ -69,7 +104,7 @@ export default function SubjectForm() {
             fields.map((field, index) => (
               <div
                 key={field.id}
-                className="px-6 w-full grid grid-cols-[2fr_1fr_1fr_auto] gap-3 items-start" // <-- changed items-end to items-start
+                className="px-6 w-full grid grid-cols-[2fr_1fr_1fr_auto] gap-3 items-start"
               >
                 <FormField
                   control={form.control}
@@ -80,11 +115,7 @@ export default function SubjectForm() {
                         <Input
                           placeholder="Optional"
                           {...field}
-                          className="w-full [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                          onKeyDown={(e) => {
-                            if (["e", "E", "+", "-"].includes(e.key))
-                              e.preventDefault();
-                          }}
+                          className="w-full text-sm"
                         />
                       </FormControl>
                     </FormItem>
@@ -94,80 +125,124 @@ export default function SubjectForm() {
                 <FormField
                   control={form.control}
                   name={`subjects.${index}.units`}
-                  render={({ field }) => (
-                    <FormItem className="min-w-0 flex flex-col">
-                      <FormControl>
-                        <Input
-                          type="number"
-                          step="0.1"
-                          {...field}
-                          className="w-full [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                          onKeyDown={(e) => {
-                            if (["e", "E", "+", "-"].includes(e.key))
-                              e.preventDefault();
-                          }}
-                        />
-                      </FormControl>
-                      <FormMessage className="text-sm mt-1 w-full whitespace-nowrap overflow-hidden hidden sm:block" />
-                    </FormItem>
-                  )}
+                  render={({ field }) => {
+                    const placeholderText = isSmallScreen
+                      ? "--"
+                      : "Enter units";
+
+                    return (
+                      <FormItem className="min-w-0 flex flex-col">
+                        <FormControl>
+                          <Input
+                            type="number"
+                            min={0}
+                            placeholder={placeholderText}
+                            className="w-full text-sm [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                            value={field.value === 0 ? "" : field.value}
+                            onFocus={(e) => {
+                              if (e.target.value === "0") {
+                                e.target.value = "";
+                              }
+                            }}
+                            onBlur={(e) => {
+                              // Set to 0 if empty on blur
+                              const val = parseFloat(e.target.value);
+                              field.onChange(isNaN(val) || val < 0 ? 0 : val);
+                            }}
+                            onChange={(e) => {
+                              const val = parseFloat(e.target.value);
+                              field.onChange(isNaN(val) || val < 0 ? 0 : val);
+                            }}
+                            onKeyDown={(e) => {
+                              if (["e", "E", "+", "-"].includes(e.key))
+                                e.preventDefault();
+                            }}
+                          />
+                        </FormControl>
+                        <FormMessage className="text-sm mt-1 w-full whitespace-nowrap overflow-hidden hidden sm:block" />
+                      </FormItem>
+                    );
+                  }}
                 />
 
                 <FormField
                   control={form.control}
                   name={`subjects.${index}.grade`}
-                  render={({ field }) => (
-                    <FormItem className="min-w-0 flex flex-col">
-                      <FormControl>
-                        <Input
-                          type="number"
-                          step="0.1"
-                          {...field}
-                          className="w-full"
-                        />
-                      </FormControl>
-                      <FormMessage className="text-sm mt-1 w-full whitespace-nowrap overflow-hidden hidden sm:block" />
-                    </FormItem>
-                  )}
-                />
+                  render={({ field }) => {
+                    const placeholderText = isSmallScreen
+                      ? "--"
+                      : "Select a grade";
 
-                {/* <FormField
-                  control={form.control}
-                  name={`subjects.${index}.grade`}
-                  render={({ field }) => (
-                    <FormItem className="min-w-0 flex flex-col">
-                      <FormControl>
-                        <Select
-                          value={
-                            field.value ? field.value.toString() : undefined
-                          }
-                          onValueChange={(val) =>
-                            field.onChange(parseFloat(val))
-                          }
-                        >
-                          <SelectTrigger className="w-full">
-                            <SelectValue placeholder="Select a grade" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="4.0">4.0</SelectItem>
-                            <SelectItem value="3.5">3.5</SelectItem>
-                            <SelectItem value="3.0">3.0</SelectItem>
-                            <SelectItem value="2.5">2.5</SelectItem>
-                            <SelectItem value="2.0">2.0</SelectItem>
-                            <SelectItem value="1.0">1.0</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </FormControl>
-                      <FormMessage className="text-sm mt-1 w-full whitespace-nowrap overflow-hidden text-ellipsis" />
-                    </FormItem>
-                  )}
-                /> */}
+                    const isPlaceholder = field.value === 0;
+
+                    return (
+                      <FormItem className="min-w-0 flex flex-col">
+                        <FormControl>
+                          <Select
+                            value={field.value.toFixed(1)}
+                            onValueChange={(val) => {
+                              const numericVal = Number(val);
+                              field.onChange(
+                                isNaN(numericVal) ? 0 : numericVal
+                              );
+                            }}
+                          >
+                            <SelectTrigger
+                              className={cn(
+                                "w-full hide-select-icon",
+                                isPlaceholder && "text-muted-foreground", // << 👈 force placeholder style
+                                form.formState.errors.subjects?.[index]
+                                  ?.grade &&
+                                  "border-destructive ring-destructive"
+                              )}
+                            >
+                              <SelectValue>
+                                {isPlaceholder
+                                  ? placeholderText
+                                  : field.value.toFixed(1)}
+                              </SelectValue>
+                            </SelectTrigger>
+
+                            <SelectContent>
+                              {/* Hidden placeholder with value=0 */}
+                              <SelectItem
+                                value={"0.0"}
+                                className="hidden"
+                                aria-hidden="true"
+                              >
+                                {placeholderText}
+                              </SelectItem>
+
+                              {validGrades.map((grade) => (
+                                <SelectItem
+                                  key={grade}
+                                  value={grade.toFixed(1)}
+                                >
+                                  {grade.toFixed(1)}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </FormControl>
+
+                        <FormMessage className="text-sm mt-1 w-full whitespace-nowrap hidden sm:block" />
+                      </FormItem>
+                    );
+                  }}
+                />
 
                 <div className="flex justify-end">
                   <Button
                     variant="ghost"
                     type="button"
-                    onClick={() => remove(index)}
+                    onClick={() => {
+                      remove(index);
+                      if (autoCalc) {
+                        // Update GPA after removal
+                        const currentSubjects = form.getValues("subjects");
+                        setGpa(calculateGpa(currentSubjects));
+                      }
+                    }}
                     className="hover:text-red-500"
                   >
                     <Trash />
@@ -177,7 +252,7 @@ export default function SubjectForm() {
             ))
           )}
 
-          <div className="px-6">
+          <div className="px-6 flex items-center space-x-4">
             <Button
               type="button"
               onClick={() => {
@@ -188,16 +263,30 @@ export default function SubjectForm() {
             >
               + Add Subject
             </Button>
+
+            <div className="flex items-center space-x-2">
+              <Switch
+                id="auto-calc"
+                checked={autoCalc}
+                onCheckedChange={(checked) => setAutoCalc(checked === true)}
+              />
+              <Label htmlFor="auto-calc">Auto-Calculation</Label>
+            </div>
           </div>
         </Card>
 
-        <Button type="submit" className="w-full">
-          Calculate GPA
-        </Button>
+        {!autoCalc && (
+          <Button type="submit" className="w-full">
+            Calculate GPA
+          </Button>
+        )}
 
-        {gpa !== null && (
+        {(autoCalc || gpa !== null) && (
           <Card className="text-center text-lg font-semibold">
-            Grade Point Average (GPA): <span className="moving-gradient text-4xl text-bold">{gpa}</span>
+            Grade Point Average (GPA):{" "}
+            <span className="moving-gradient text-4xl text-bold">
+              {gpa !== null ? gpa : "--"}
+            </span>
           </Card>
         )}
       </form>
