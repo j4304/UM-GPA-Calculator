@@ -165,8 +165,20 @@ export default function SubjectForm() {
                               field.onChange(isNaN(val) || val < 0 ? 0 : val);
                             }}
                             onKeyDown={(e) => {
-                              if (["e", "E", "+", "-"].includes(e.key))
+                              const invalidKeys = [
+                                "e",
+                                "E",
+                                "+",
+                                "-",
+                                ".",
+                                " ",
+                              ];
+                              const isLetter =
+                                e.key.length === 1 && e.key.match(/[a-z]/i);
+
+                              if (invalidKeys.includes(e.key) || isLetter) {
                                 e.preventDefault();
+                              }
                             }}
                           />
                         </FormControl>
