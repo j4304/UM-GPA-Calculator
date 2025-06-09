@@ -173,10 +173,10 @@ export default function SubjectForm() {
                                 ".",
                                 " ",
                               ];
-                              const isLetter =
-                                e.key.length === 1 && e.key.match(/[a-z]/i);
+                              const isAlpha =
+                                e.key.length === 1 && /[a-zA-Z]/.test(e.key);
 
-                              if (invalidKeys.includes(e.key) || isLetter) {
+                              if (invalidKeys.includes(e.key) || isAlpha) {
                                 e.preventDefault();
                               }
                             }}
