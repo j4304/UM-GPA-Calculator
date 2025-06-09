@@ -313,7 +313,7 @@ export default function SubjectForm() {
 
             {getHonor(gpa) !== "" && (
               <span className="max-w-md mx-auto bg-muted rounded px-[0.3rem] py-[0.2rem] text-sm font-medium">
-                Eligible for {getHonor(gpa)}
+                Meets Requirements for {getHonor(gpa)}
               </span>
             )}
           </Card>
