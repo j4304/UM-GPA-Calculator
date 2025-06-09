@@ -22,9 +22,9 @@ export const metadata: Metadata = {
   description:
     "Your go-to tool for accurate and instant GPA calculation, powered by the official University of Mindanao grading system. Track your academic progress with ease and confidence.",
   icons: {
-    icon: "/UM-GPA.png",
-    shortcut: "/UM-GPA.png",
-    apple: "/UM-GPA.png",
+    icon: "/umgpa-icon.png",
+    shortcut: "/umgpa-icon.png",
+    apple: "/umgpa-icon.png",
   },
 };
 
@@ -36,7 +36,6 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <Head>
-        {/* SEO Basics */}
         <meta charSet="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="canonical" href="https://umgpa.vercel.app" />
@@ -89,7 +88,7 @@ export default function RootLayout({
           <footer className="border-t bg-background h-12 flex items-center flex-shrink-0">
             <div className="container mx-auto max-w-5xl px-6 text-center text-sm text-muted-foreground w-full">
               <p className="truncate">
-                © {new Date().getFullYear()} UM GPA Calculator. Created by{" "}
+                © {new Date().getFullYear()} UM GPA Calculator Created by{" "}
                 <a
                   href="https://cristianjay.me"
                   target="_blank"

@@ -77,6 +77,14 @@ export default function SubjectForm() {
     setGpa(calculateGpa(data.subjects));
   }
 
+  function getHonor(gpa: number | null): string {
+    if (gpa === null) return "";
+    else if (gpa > 3.5) return "Summa Cum Laude";
+    else if (gpa > 3.26) return "Magna Cum Laude";
+    else if (gpa > 3) return "Cum Laude";
+    return "";
+  }
+
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
@@ -283,11 +291,19 @@ export default function SubjectForm() {
         )}
 
         {(autoCalc || gpa !== null) && (
-          <Card className="text-center text-lg font-semibold">
-            Grade Point Average (GPA):{" "}
-            <span className="moving-gradient text-4xl text-bold">
+          <Card className="text-center">
+            <span className="text-lg font-semibold">
+              Grade Point Average (GPA):{" "}
+            </span>
+            <span className="moving-gradient text-4xl font-bold">
               {gpa !== null ? gpa : "--"}
             </span>
+
+            {getHonor(gpa) !== "" && (
+              <span className="max-w-md mx-auto bg-muted rounded px-[0.3rem] py-[0.2rem] text-sm font-medium">
+                Eligible for {getHonor(gpa)}
+              </span>
+            )}
           </Card>
         )}
       </form>
