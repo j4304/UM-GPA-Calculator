@@ -74,8 +74,11 @@ export default function RootLayout({
         >
           <header className="sticky top-0 z-50 bg-background border-b flex-shrink-0">
             <div className="container mx-auto max-w-5xl px-6 py-4 flex items-center justify-between">
-              <h1 className="text-2xl font-bold">
+              <h1 className="text-2xl font-bold flex items-center gap-2">
                 <span className="moving-gradient">UM</span> GPA Calculator
+                <span className="text-[10px] text-white bg-moving-gradient px-1.5 py-0.5 rounded uppercase">
+                  Beta
+                </span>
               </h1>
               <ModeToggle />
             </div>
